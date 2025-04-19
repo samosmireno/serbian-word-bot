@@ -1,107 +1,126 @@
 const fs = require("fs");
-const xml2js = require("xml2js");
+const { createReadStream } = require("fs");
+const { XMLParser } = require("fast-xml-parser");
+const { Transform } = require("stream");
 
 /**
- * Loads and parses a dictionary from XML file
+ * Loads and parses a dictionary from XML file using streams
  * @param {string} filePath - Path to XML dictionary file
  * @returns {Promise<Array>} Array of word objects with definitions and synonyms
  */
 async function loadWords(filePath) {
-  try {
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      throw new Error(`Dictionary file not found: ${filePath}`);
-    }
-
-    const xmlData = fs.readFileSync(filePath, "utf-8");
-    const parser = new xml2js.Parser();
-    const result = await parser.parseStringPromise(xmlData);
-
-    if (
-      !result.entries ||
-      !result.entries.entry ||
-      !Array.isArray(result.entries.entry)
-    ) {
-      throw new Error("Invalid dictionary format");
-    }
-
-    const entries = result.entries.entry;
+  return new Promise((resolve, reject) => {
     const words = [];
 
-    for (const entry of entries) {
-      try {
-        const word = entry.form?.[0]?.orth?.[0]?.trim();
-        const pronunciation = entry.form?.[0]?.pron?.[0]?.trim();
-        const hyphenation = entry.form?.[0]?.hyph?.[0]?.trim();
+    const fileStream = createReadStream(filePath, {
+      highWaterMark: 1024 * 64,
+    });
 
-        const senses = [];
-        const synonyms = new Set(); // Using Set to avoid duplicates
+    const parser = new XMLParser({
+      parseAttributeValue: true,
+      ignoreAttributes: false,
+      isArray: (name) => ["entry", "sense", "xr", "innerlink"].includes(name),
+    });
 
-        // Process each sense for definitions and synonyms
-        if (entry.sense && Array.isArray(entry.sense)) {
-          entry.sense.forEach((s) => {
-            // Get definition
-            const def = s.def?.[0];
-            if (def) {
-              let definition;
-              if (typeof def === "string") {
-                definition = def.trim();
-              } else if (typeof def === "object" && def._) {
-                definition = def._.trim();
-              }
+    let xmlChunks = "";
 
-              if (definition) {
-                senses.push(definition);
-              }
-            }
+    fileStream
+      .on("data", (chunk) => {
+        xmlChunks += chunk.toString();
 
-            // Get synonyms
-            if (s.xr && Array.isArray(s.xr)) {
-              s.xr.forEach((xr) => {
-                if (xr.$ && xr.$.type === "synonymy" && xr.innerlink) {
-                  xr.innerlink.forEach((link) => {
-                    if (typeof link === "string" && link.trim()) {
-                      synonyms.add(link.trim());
-                    } else if (
-                      typeof link === "object" &&
-                      link._ &&
-                      link._.trim()
-                    ) {
-                      synonyms.add(link._.trim());
+        const entryEndIndex = xmlChunks.lastIndexOf("</entry>");
+        if (entryEndIndex !== -1) {
+          const completeXml = `<root>${xmlChunks.substring(
+            0,
+            entryEndIndex + 8
+          )}</root>`;
+          try {
+            const result = parser.parse(completeXml);
+            if (result.root && result.root.entry) {
+              const entries = Array.isArray(result.root.entry)
+                ? result.root.entry
+                : [result.root.entry];
+
+              for (const entry of entries) {
+                if (!entry.form || !entry.form.orth) continue;
+
+                const wordObj = {
+                  word: entry.form.orth ? entry.form.orth.trim() : "",
+                  hyphenation: entry.form.hyph ? entry.form.hyph.trim() : "",
+                  pronunciation: entry.form.pron ? entry.form.pron.trim() : "",
+                  definitions: [],
+                  synonyms: [],
+                };
+
+                if (entry.sense) {
+                  const senses = Array.isArray(entry.sense)
+                    ? entry.sense
+                    : [entry.sense];
+                  for (const sense of senses) {
+                    if (sense["#text"]) {
+                      wordObj.definitions.push(sense["#text"].trim());
+                    } else if (sense.def) {
+                      const defText =
+                        typeof sense.def === "string"
+                          ? sense.def
+                          : sense.def["#text"] || "";
+                      if (defText) wordObj.definitions.push(defText.trim());
+                    } else if (sense.gloss) {
+                      const glossText =
+                        typeof sense.gloss === "string"
+                          ? sense.gloss
+                          : sense.gloss["#text"] || "";
+                      if (glossText) wordObj.definitions.push(glossText.trim());
                     }
-                  });
+                  }
                 }
-              });
+
+                if (entry.sense) {
+                  const senses = Array.isArray(entry.sense)
+                    ? entry.sense
+                    : [entry.sense];
+                  for (const sense of senses) {
+                    if (sense.xr) {
+                      const xrs = Array.isArray(sense.xr)
+                        ? sense.xr
+                        : [sense.xr];
+                      for (const xr of xrs) {
+                        if (xr["@_type"] === "synonymy" && xr.innerlink) {
+                          const innerlinks = Array.isArray(xr.innerlink)
+                            ? xr.innerlink
+                            : [xr.innerlink];
+
+                          for (const innerlink of innerlinks) {
+                            if (typeof innerlink === "string") {
+                              wordObj.synonyms.push(innerlink.trim());
+                            } else if (innerlink["#text"]) {
+                              wordObj.synonyms.push(innerlink["#text"].trim());
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+
+                if (wordObj.word) {
+                  words.push(wordObj);
+                }
+              }
             }
-          });
+          } catch (err) {
+            console.error("Error parsing XML chunk:", err.message);
+          }
+
+          xmlChunks = xmlChunks.substring(entryEndIndex + 8);
         }
-
-        if (word && (senses.length > 0 || synonyms.size > 0)) {
-          words.push({
-            word,
-            pronunciation,
-            hyphenation,
-            definitions: senses,
-            synonyms: Array.from(synonyms),
-          });
-        }
-      } catch (entryError) {
-        console.warn(
-          `Error processing dictionary entry: ${entryError.message}`
-        );
-        // Continue processing other entries
-      }
-    }
-
-    if (words.length === 0) {
-      throw new Error("No valid words found in dictionary");
-    }
-
-    return words;
-  } catch (error) {
-    console.error(`Error loading dictionary: ${error.message}`);
-    throw error;
-  }
+      })
+      .on("end", () => {
+        console.log(`Processed ${words.length} words from dictionary`);
+        resolve(words);
+      })
+      .on("error", reject);
+  });
 }
 
 module.exports = loadWords;
