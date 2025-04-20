@@ -1,4 +1,12 @@
 {
+  "name": "serbian-word-of-the-day-bot",
+  "version": "1.0.0",
+  "description": "A Discord bot that posts a random Serbian word daily",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --max-old-space-size=256 index.js"
+  },
   "dependencies": {
     "discord.js": "^14.18.0",
     "dotenv": "^16.5.0",
@@ -6,5 +14,18 @@
     "fs": "^0.0.1-security",
     "node-cron": "^3.0.3",
     "xml2js": "^0.6.2"
+  },
+  "keywords": [
+    "discord-bot",
+    "serbian",
+    "dictionary",
+    "language",
+    "learning"
+  ],
+  "author": "Nikola Petrovic",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samosmireno/serbian-word-bot"
   }
 }

@@ -1,7 +1,5 @@
-const fs = require("fs");
 const { createReadStream } = require("fs");
 const { XMLParser } = require("fast-xml-parser");
-const { Transform } = require("stream");
 
 /**
  * Loads and parses a dictionary from XML file using streams

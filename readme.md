@@ -1,76 +1,44 @@
-# Serbian Word of the Day Bot 🇷🇸
+# 📘 Serbian Word of the Day Discord Bot
 
-A Discord bot that posts a random Serbian word with its pronunciation and definitions to a specified channel every day.
+A Discord bot that posts a random Serbian word with definitions and synonyms daily.
 
 ## Features
 
-- Posts a daily Serbian word at a scheduled time (default: 9:00 AM)
-- Includes pronunciation, hyphenation, definitions, and synonyms
-- Loads words from an XML dictionary file
-- Error handling for robust operation
-- Formats messages with clear sections for each word component
+- 🔄 Posts a random Serbian word daily at specified time
+- 📚 Includes word definitions and synonyms
+- 🧠 Loads words from an XML dictionary file
+- ⏰ Customizable posting schedule
 
 ## Setup Instructions
 
 ### Prerequisites
 
 - Node.js (v14 or newer)
-- A Discord bot token
-- A server with a channel where the bot has permission to post
+- A Discord bot token ([How to create a bot](https://discordjs.guide/preparations/setting-up-a-bot-application.html))
+- A Discord server where you have permission to add bots
 
 ### Installation
 
-1. Clone this repository or download the files
+1. Clone this repository:
+
+   ```
+   git clone https://github.com/YourUsername/serbian-word-bot.git
+   cd serbian-word-bot
+   ```
+
 2. Install dependencies:
+
    ```
-   npm install discord.js node-cron xml2js dotenv
+   npm install
    ```
-3. Create a `.env` file based on the provided sample
-4. Add your Discord bot token to the `.env` file
-5. Update the channel ID in the `.env` file
 
-### Configuration
+3. Create your configuration:
 
-Edit the `.env` file to customize:
+   ```
+   cp .env.example .env
+   ```
 
-- `BOT_TOKEN`: Your Discord bot token
-- `CHANNEL_ID`: The ID of the channel where words will be posted
-- Optional settings can be uncommented to customize behavior
-
-### Dictionary Format
-
-The bot expects a dictionary in XML format with this structure:
-
-```xml
-<entries>
-  <entry xml:id="word_id" xml:lang="sr-Latn">
-    <form type="lemma">
-      <orth>word</orth>
-      <hyph>syllable|division</hyph>
-      <pron>pronunciation</pron>
-    </form>
-    <sense n="1">
-      <def>definition</def>
-      <xr type="synonymy">
-        <innerlink>synonym1</innerlink>
-      </xr>
-      <xr type="synonymy">
-        <innerlink>synonym2</innerlink>
-      </xr>
-    </sense>
-    <!-- Multiple sense elements allowed -->
-  </entry>
-  <!-- Multiple entry elements -->
-</entries>
-```
-
-The bot will extract:
-
-- The word (orth)
-- Syllable division (hyph)
-- Pronunciation (pron)
-- Definitions (def)
-- Synonyms (innerlink inside xr with type="synonymy")
+4. Edit the `.env` file with your Discord bot token and channel ID
 
 ### Running the Bot
 
@@ -80,24 +48,22 @@ Start the bot with:
 node index.js
 ```
 
-For production use, consider using a process manager like PM2:
+## Customization
 
-```
-npm install -g pm2
-pm2 start index.js --name word-bot
-```
+You can customize the bot by editing the `.env` file:
 
-## Security Notes
-
-- Never commit your `.env` file or expose your bot token
-- The original code contained a hardcoded token which has been removed
-
-## Troubleshooting
-
-- **Bot doesn't post**: Check channel permissions and bot token
-- **Empty dictionary**: Verify dictionary.xml format and path
-- **Schedule issues**: Make sure server time is correctly set
+- `CRON_SCHEDULE`: Change when the word is posted (default: 0 10 \* \* \* = 10:00 AM daily)
 
 ## License
 
-This project is available under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request

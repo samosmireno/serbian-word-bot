@@ -6,6 +6,7 @@ require("dotenv").config();
 
 const TOKEN = process.env.BOT_TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
+const CRON_SCHEDULE = process.env.CRON_SCHEDULE || "0 10 * * *";
 
 const client = new Client({
   intents: [
@@ -24,7 +25,7 @@ client.once("ready", async () => {
     dictionary = await loadWords("./dictionary.xml");
     console.log(`Loaded ${dictionary.length} words from dictionary`);
 
-    cron.schedule("1 0 * * *", () => {
+    cron.schedule(CRON_SCHEDULE, () => {
       postWordOfTheDay();
     });
 
