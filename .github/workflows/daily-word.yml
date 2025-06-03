@@ -1,0 +1,32 @@
+name: Daily Serbian Word
+
+on:
+  schedule:
+    # Runs at 10:00 AM UTC every day
+    - cron: '0 21 * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  send-daily-word:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Create .env file
+      run: |
+        echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
+        echo "CHANNEL_ID=${{ secrets.CHANNEL_ID }}" >> .env
+        
+    - name: Send daily word
+      run: npm run daily-word
