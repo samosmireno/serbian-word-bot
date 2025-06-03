@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --max-old-space-size=256 index.js"
+    "dev": "node --max-old-space-size=256 index.js",
+    "daily-word": "node daily-word.js"
   },
   "dependencies": {
     "discord.js": "^14.18.0",
