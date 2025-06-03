@@ -27,7 +27,7 @@ jobs:
       run: |
         echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
         echo "CHANNEL_ID=${{ secrets.CHANNEL_ID }}" >> .env
-        echo {{secrets.TEST}}
+        echo "$TEST"
         
     - name: Send daily word
       run: npm run daily-word
