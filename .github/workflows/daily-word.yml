@@ -2,8 +2,8 @@ name: Daily Serbian Word
 
 on:
   schedule:
-    # Runs at 10:00 AM UTC every day
-    - cron: '0 21 * * *'
+    # Runs at 11:00 AM UTC every day
+    - cron: '0 11 * * *'
   workflow_dispatch: # Allows manual triggering
 
 jobs:
